@@ -39,6 +39,30 @@ class GritLM(torch.nn.Module):
             else: 
                 raise ValueError("Could not find attribute to use for embedding: ", self.model)
 
+        # convert to lora
+        assert model_name_or_path == "mistralai/Mistral-7B-Instruct-v0.2"
+        from peft import LoraConfig, get_peft_model
+        LORA_TARGET_MODULES = [
+            "q_proj",
+            "v_proj",
+            "k_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ]
+        config = LoraConfig(
+            r=16,
+            lora_alpha=32,
+            target_modules=LORA_TARGET_MODULES,
+            lora_dropout=0.05,
+            bias="none",
+            task_type=None,
+        )
+        self.model = get_peft_model(self.model, config)
+        print(f"Model's Lora trainable parameters:")
+        self.model.print_trainable_parameters()
+
         self.projection = torch.nn.Linear(
             in_features=self.model.config.hidden_size, 
             out_features=int(projection),

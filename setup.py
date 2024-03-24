@@ -62,6 +62,7 @@ setup(
         'accelerate>=0.26.1',
         'transformers>=4.37.2',
         'datasets>=2.16.1',
+        'peft',
         'wandb',
         'mteb'
     ],
