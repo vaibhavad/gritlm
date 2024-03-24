@@ -223,3 +223,7 @@ class GritLMTrainModel(GritLM):
 
     def gradient_checkpointing_enable(self, *args, **kwargs):
         self.model.gradient_checkpointing_enable(*args, **kwargs)
+
+    def save(self, output_path):
+        print(f"Saving model to {output_path}")
+        self.model.save_pretrained(output_path)

@@ -4,6 +4,7 @@ import multiprocessing
 import os
 from pathlib import Path
 import random
+from typing import Optional
 
 import datasets
 import torch
@@ -329,7 +330,20 @@ def main():
         trainer.emb_p_only = training_args.emb_p_only
         trainer.emb_q_only = training_args.emb_q_only
     else:
-        trainer = Trainer(**trainer_kwargs)
+        class CustomTrainer(Trainer):
+            def _save(self, output_dir: Optional[str] = None, state_dict=None):
+                # If we are executing this function, we are the process zero, so we don't check for that.
+                output_dir = output_dir if output_dir is not None else self.args.output_dir
+                os.makedirs(output_dir, exist_ok=True)
+                logger.info(f"Saving model checkpoint to {output_dir}")
+
+                self.model.save(output_dir)
+                self.tokenizer.save_pretrained(output_dir)
+
+                # Good practice: save your training arguments together with the trained model
+                torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
+            
+        trainer = CustomTrainer(**trainer_kwargs)
 
     if len(ds_embedding_lens) > 1:
         assert training_args.dataloader_drop_last, "Multiple datasets are only supported with dropping the last incomplete batch, set `--dataloader_drop_last`"
